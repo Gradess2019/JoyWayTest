@@ -3,6 +3,9 @@
 
 #include "InteractableObjects/Weapon.h"
 
+#include "InteractableObjects/Weapon/FireMode/AutoFireMode.h"
+#include "InteractableObjects/Weapon/FireMode/FireMode.h"
+
 
 AWeapon::AWeapon()
 {
@@ -10,9 +13,13 @@ AWeapon::AWeapon()
 
 	SetMobility(EComponentMobility::Movable);
 	SetSimulatePhysics(true);
+
+	// TODO Create a function to change fire mode dynamically
+	FireMode = CreateDefaultSubobject<UAutoFireMode>(TEXT("FireMode"));
+	IFireMode::Execute_Init(FireMode, this);
 }
 
-void AWeapon::SetSimulatePhysics(const bool& InState)
+void AWeapon::SetSimulatePhysics(const bool InState)
 {
 	GetStaticMeshComponent()->SetSimulatePhysics(InState);
 }
@@ -33,10 +40,24 @@ void AWeapon::Drop_Implementation()
 
 void AWeapon::RunAction_Implementation()
 {
-	GLog->Log("START FIRE");
+	check(FireMode && FireMode->Implements<UFireMode>())
+
+	IFireMode::Execute_StartFire(FireMode);
 }
 
 void AWeapon::StopAction_Implementation()
 {
-	GLog->Log("STOP FIRE");
+	check(FireMode && FireMode->Implements<UFireMode>())
+
+	IFireMode::Execute_StopFire(FireMode);
+}
+
+void AWeapon::SetFireMode(UObject* InFireMode)
+{
+	FireMode = InFireMode;
+}
+
+void AWeapon::Fire_Implementation()
+{
+	GLog->Log("Fire!");
 }

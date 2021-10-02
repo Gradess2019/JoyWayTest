@@ -22,7 +22,11 @@ public:
 	 * @brief Whether enable or disable physics simulation
 	 * @param InState New physics state
 	 */
-	void SetSimulatePhysics(const bool& InState);
+	UFUNCTION(
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	void SetSimulatePhysics(bool InState);
 
 	//~ Begin IInteractable interface
 	virtual void Pickup_Implementation(USceneComponent* InComponent) override;
@@ -30,4 +34,28 @@ public:
 	virtual void RunAction_Implementation() override;
 	virtual void StopAction_Implementation() override;
 	//~ End IInteractable interface
+
+	UFUNCTION(
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	void SetFireMode(
+		UPARAM(DisplayName = "FireMode") UObject* InFireMode
+	);
+
+	/**
+	* @brief Execute single fire
+	*/
+	UFUNCTION(
+		BlueprintNativeEvent,
+		Category = "JoyWay|InteractableObjects|Weapon|FireMode"
+	)
+	void Fire();
+
+protected:
+	UPROPERTY(
+		BlueprintReadOnly,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	UObject* FireMode;
 };
