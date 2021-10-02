@@ -6,6 +6,8 @@
 #include "UObject/Interface.h"
 #include "FireMode.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(FireModeLog, Log, All)
+
 // This class does not need to be modified.
 UINTERFACE()
 class UFireMode : public UInterface
