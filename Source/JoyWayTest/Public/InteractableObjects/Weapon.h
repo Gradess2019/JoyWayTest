@@ -27,5 +27,7 @@ public:
 	//~ Begin IInteractable interface
 	virtual void Pickup_Implementation(USceneComponent* InComponent) override;
 	virtual void Drop_Implementation() override;
+	virtual void RunAction_Implementation() override;
+	virtual void StopAction_Implementation() override;
 	//~ End IInteractable interface
 };

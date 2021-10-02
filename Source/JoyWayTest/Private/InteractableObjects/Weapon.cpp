@@ -7,7 +7,7 @@
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	
+
 	SetMobility(EComponentMobility::Movable);
 	SetSimulatePhysics(true);
 }
@@ -22,11 +22,21 @@ void AWeapon::Pickup_Implementation(USceneComponent* InComponent)
 	if (!InComponent) return;
 
 	SetSimulatePhysics(false);
-	AttachToComponent(InComponent, FAttachmentTransformRules::KeepWorldTransform);
+	AttachToComponent(InComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }
 
 void AWeapon::Drop_Implementation()
 {
 	GetStaticMeshComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	SetSimulatePhysics(true);
+}
+
+void AWeapon::RunAction_Implementation()
+{
+	GLog->Log("START FIRE");
+}
+
+void AWeapon::StopAction_Implementation()
+{
+	GLog->Log("STOP FIRE");
 }
