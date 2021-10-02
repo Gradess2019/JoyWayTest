@@ -11,12 +11,15 @@ UWeaponPrimaryDataAsset::UWeaponPrimaryDataAsset()
 	
 	Mesh = ObjectFinder.Succeeded() ? ObjectFinder.Object : nullptr;
 
-	DefaultFireMode = CreateDefaultSubobject<UNullFireMode>(TEXT("FireMode"));
+	DefaultFireModeClass = UNullFireMode::StaticClass();
 
 	FireLocationSocketName = TEXT("FireLocation");
 	
 	FireRate = 0.1f;
+	TraceDistance = 10000.f;
 
 	MagazineAmmo = 30;
 	Ammo = 90;
+
+	TraceChannel = ECC_Visibility;
 }

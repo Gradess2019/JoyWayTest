@@ -3,6 +3,7 @@
 
 #include "InteractableObjects/Weapon/FireMode/AutoFireMode.h"
 #include "InteractableObjects/Weapon.h"
+#include "InteractableObjects/Weapon/DataAsset/WeaponPrimaryDataAsset.h"
 
 void UAutoFireMode::Init_Implementation(AWeapon* InWeapon)
 {
@@ -16,7 +17,7 @@ void UAutoFireMode::StartFire_Implementation()
 		Timer,
 		Weapon,
 		&AWeapon::Fire,
-		0.1f,
+		Weapon->DefaultData->FireRate,
 		true
 	);
 }

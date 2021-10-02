@@ -6,8 +6,12 @@
 #include "Engine/DataAsset.h"
 #include "WeaponPrimaryDataAsset.generated.h"
 
+//~ Begin forward declarations
+class UFireMode;
+//~ End forward declarations
+
 /**
- * 
+ * @brief A data asset that contains default information about weapon such as fire mode, ammo, etc. 
  */
 UCLASS()
 class JOYWAYTEST_API UWeaponPrimaryDataAsset : public UPrimaryDataAsset
@@ -17,39 +21,78 @@ class JOYWAYTEST_API UWeaponPrimaryDataAsset : public UPrimaryDataAsset
 	UWeaponPrimaryDataAsset();
 
 public:
+	/**
+	 * @brief Weapon mesh
+	 */
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadOnly
 	)
 	UStaticMesh* Mesh;
 
+	/**
+	 * @brief Weapon default fire mode like a automatic, semi-auto, etc.
+	 */
 	UPROPERTY(
 		EditAnywhere,
-		BlueprintReadOnly
+		BlueprintReadOnly,
+		meta = (
+			MustImplement = "FireMode"
+		)
 	)
-	UObject* DefaultFireMode;
+	TSubclassOf<UObject> DefaultFireModeClass;
 
+	/**
+	 * @brief From where we will start our line trace
+	 */
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadOnly
 	)
 	FName FireLocationSocketName;
 
+	/**
+	 * @brief Delay between every single shot
+	 */
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadOnly
 	)
 	float FireRate;
-	
+
+	/**
+	 * @brief How far the end of line trace will be from fire location socket
+	 */
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadOnly
+	)
+	float TraceDistance;
+
+	/**
+	 * @brief max ammo in a magazine
+	 */
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadOnly
 	)
 	int32 MagazineAmmo;
-	
+
+	/**
+	 * @brief max ammo in a store
+	 */
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadOnly
 	)
 	int32 Ammo;
+
+	/**
+	 * @brief Channel for line trace to detect hit
+	 */
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadOnly
+	)
+	TEnumAsByte<ECollisionChannel> TraceChannel;
 };

@@ -3,8 +3,10 @@
 
 #include "InteractableObjects/Weapon.h"
 
+#include "InteractableObjects/Weapon/DataAsset/WeaponPrimaryDataAsset.h"
 #include "InteractableObjects/Weapon/FireMode/AutoFireMode.h"
 #include "InteractableObjects/Weapon/FireMode/FireMode.h"
+#include "JoyWayTest/JoyWayTest.h"
 
 
 AWeapon::AWeapon()
@@ -14,9 +16,16 @@ AWeapon::AWeapon()
 	SetMobility(EComponentMobility::Movable);
 	SetSimulatePhysics(true);
 
-	// TODO Create a function to change fire mode dynamically
-	FireMode = CreateDefaultSubobject<UAutoFireMode>(TEXT("FireMode"));
-	IFireMode::Execute_Init(FireMode, this);
+	CollisionParams = FCollisionQueryParams::DefaultQueryParam;
+	CollisionParams.TraceTag = DebugTraceTag;
+}
+
+void AWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+
+	check(DefaultData->DefaultFireModeClass);
+	SetFireModeByClass(DefaultData->DefaultFireModeClass);
 }
 
 void AWeapon::SetSimulatePhysics(const bool InState)
@@ -26,38 +35,71 @@ void AWeapon::SetSimulatePhysics(const bool InState)
 
 void AWeapon::Pickup_Implementation(USceneComponent* InComponent)
 {
-	if (!InComponent) return;
-
+	check(InComponent);
+	StopAction_Implementation();
+	
 	SetSimulatePhysics(false);
 	AttachToComponent(InComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }
 
 void AWeapon::Drop_Implementation()
 {
+	StopAction_Implementation();
+	
 	GetStaticMeshComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	SetSimulatePhysics(true);
 }
 
 void AWeapon::RunAction_Implementation()
 {
-	check(FireMode && FireMode->Implements<UFireMode>())
-
 	IFireMode::Execute_StartFire(FireMode);
 }
 
 void AWeapon::StopAction_Implementation()
 {
-	check(FireMode && FireMode->Implements<UFireMode>())
-
 	IFireMode::Execute_StopFire(FireMode);
 }
 
 void AWeapon::SetFireMode(UObject* InFireMode)
 {
 	FireMode = InFireMode;
+	check(FireMode && FireMode->Implements<UFireMode>());
+
+	IFireMode::Execute_Init(FireMode, this);
+}
+
+void AWeapon::SetFireModeByClass(UClass* InFireModeClass)
+{
+	const auto NewFireMode = NewObject<UObject>(this, InFireModeClass);
+	SetFireMode(NewFireMode);
 }
 
 void AWeapon::Fire_Implementation()
 {
 	GLog->Log("Fire!");
+	FHitResult Hit;
+	const auto StartLocation = GetStaticMeshComponent()->GetSocketLocation(DefaultData->FireLocationSocketName);
+	const auto EndLocation = StartLocation + DefaultData->TraceDistance * GetActorForwardVector();
+
+	GetWorld()->DebugDrawTraceTag = DebugTraceTag;
+	GetWorld()->LineTraceSingleByChannel(
+		Hit,
+		StartLocation,
+		EndLocation,
+		DefaultData->TraceChannel,
+		CollisionParams
+	);
 }
+
+#if WITH_EDITOR
+void AWeapon::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(
+		AWeapon, DefaultData))
+	{
+		GetStaticMeshComponent()->SetStaticMesh(DefaultData->Mesh);
+	}
+}
+#endif

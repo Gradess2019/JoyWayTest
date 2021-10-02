@@ -8,6 +8,10 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(FireModeLog, Log, All)
 
+//~ Begin forward declarations
+class AWeapon;
+//~ End forward declarations
+
 // This class does not need to be modified.
 UINTERFACE()
 class UFireMode : public UInterface

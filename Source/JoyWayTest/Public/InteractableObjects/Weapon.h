@@ -7,6 +7,10 @@
 #include "Engine/StaticMeshActor.h"
 #include "Weapon.generated.h"
 
+//~ Begin forward declarations
+class UWeaponPrimaryDataAsset;
+//~ End forward declarations
+
 /**
  * @brief Represents a weapon in a game
  */
@@ -17,6 +21,8 @@ class JOYWAYTEST_API AWeapon : public AStaticMeshActor, public IPickupable
 
 public:
 	AWeapon();
+
+	virtual void BeginPlay() override;
 
 	/**
 	 * @brief Whether enable or disable physics simulation
@@ -35,12 +41,28 @@ public:
 	virtual void StopAction_Implementation() override;
 	//~ End IInteractable interface
 
+	/**
+	 * @brief Sets new fire mode
+	 * @param InFireMode New fire mode for the weapon
+	 */
 	UFUNCTION(
 		BlueprintCallable,
 		Category = "JoyWay|InteractableObjects|Weapon"
 	)
 	void SetFireMode(
 		UPARAM(DisplayName = "FireMode") UObject* InFireMode
+	);
+
+	/**
+	* @brief Sets new fire mode by class
+	* @param InFireModeClass New fire mode class for the weapon
+	*/
+	UFUNCTION(
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	void SetFireModeByClass(
+		UPARAM(DisplayName = "FireMode") UClass* InFireModeClass
 	);
 
 	/**
@@ -52,10 +74,33 @@ public:
 	)
 	void Fire();
 
+	/**
+	 * @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
+	 */
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadOnly,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	UWeaponPrimaryDataAsset* DefaultData;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 protected:
+	/**
+	 * @brief Current weapon fire mode
+	 */
 	UPROPERTY(
 		BlueprintReadOnly,
 		Category = "JoyWay|InteractableObjects|Weapon"
 	)
 	UObject* FireMode;
+
+private:
+	/**
+	 * @brief Default collision params for single line trace while firing
+	 */
+	FCollisionQueryParams CollisionParams;
 };
