@@ -59,6 +59,15 @@ public:
 		BlueprintReadOnly
 	)
 	float FireRate;
+	
+	/**
+	 * @brief Amount of damage that we apply on hit actor
+	 */
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadOnly
+	)
+	float Damage;
 
 	/**
 	 * @brief How far the end of line trace will be from fire location socket
@@ -70,7 +79,7 @@ public:
 	float TraceDistance;
 
 	/**
-	 * @brief max ammo in a magazine
+	 * @brief Max ammo in a magazine
 	 */
 	UPROPERTY(
 		EditAnywhere,
@@ -79,7 +88,7 @@ public:
 	int32 MagazineAmmo;
 
 	/**
-	 * @brief max ammo in a store
+	 * @brief Max ammo in a store
 	 */
 	UPROPERTY(
 		EditAnywhere,

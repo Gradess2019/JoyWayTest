@@ -16,6 +16,7 @@ UWeaponPrimaryDataAsset::UWeaponPrimaryDataAsset()
 	FireLocationSocketName = TEXT("FireLocation");
 	
 	FireRate = 0.1f;
+	Damage = 30.f;
 	TraceDistance = 10000.f;
 
 	MagazineAmmo = 30;
