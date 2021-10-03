@@ -17,6 +17,8 @@ AWeapon::AWeapon()
 
 	SetMobility(EComponentMobility::Movable);
 	SetSimulatePhysics(true);
+	GetStaticMeshComponent()->SetGenerateOverlapEvents(true);
+	GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::PhysicsActor_ProfileName);
 	bReplicates = true;
 	bStaticMeshReplicateMovement = true;
 
@@ -32,9 +34,10 @@ void AWeapon::BeginPlay()
 	{
 		SetReplicateMovement(bStaticMeshReplicateMovement);
 	}
-	
+
 	check(DefaultData->DefaultFireModeClass);
 	SetFireModeByClass(DefaultData->DefaultFireModeClass);
+	SetDefaultStaticMesh();
 }
 
 void AWeapon::SetSimulatePhysics(const bool InState)
@@ -87,7 +90,7 @@ void AWeapon::Fire_Implementation()
 {
 	const auto Hit = LaunchTrace();
 	DrawTrace(Hit, FColor::Blue);
-	
+
 	Fire_Server();
 }
 
@@ -104,7 +107,7 @@ void AWeapon::Fire_Server_Implementation()
 	const auto DamageCauser = this;
 	const auto DamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
 	const auto DamageEvent = FDamageEvent(DamageTypeClass);
-	
+
 	DamagedActor->TakeDamage(
 		BaseDamage,
 		DamageEvent,
@@ -123,7 +126,7 @@ FHitResult AWeapon::LaunchTrace()
 	FHitResult Hit;
 	const auto StartLocation = GetStaticMeshComponent()->GetSocketLocation(DefaultData->FireLocationSocketName);
 	const auto EndLocation = StartLocation + DefaultData->TraceDistance * GetActorForwardVector();
-	
+
 	GetWorld()->LineTraceSingleByChannel(
 		Hit,
 		StartLocation,
@@ -131,7 +134,7 @@ FHitResult AWeapon::LaunchTrace()
 		DefaultData->TraceChannel,
 		CollisionParams
 	);
-	
+
 	return Hit;
 }
 
@@ -152,15 +155,20 @@ void AWeapon::DrawTrace_Client_Implementation(const FHitResult Hit, const FColor
 	DrawTrace(Hit, Color);
 }
 
+void AWeapon::SetDefaultStaticMesh()
+{
+	GetStaticMeshComponent()->SetStaticMesh(DefaultData->Mesh);
+}
+
 #if WITH_EDITOR
 void AWeapon::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(
-		AWeapon, DefaultData))
+	if (PropertyChangedEvent.Property &&
+		PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(AWeapon, DefaultData))
 	{
-		GetStaticMeshComponent()->SetStaticMesh(DefaultData->Mesh);
+		SetDefaultStaticMesh();
 	}
 }
 #endif

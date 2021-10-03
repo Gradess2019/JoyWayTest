@@ -121,19 +121,26 @@ public:
 	);
 
 	/**
-	 * @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
+	 * @brief Sets default static mesh
 	 */
-	UPROPERTY(
-		EditAnywhere,
-		BlueprintReadOnly,
-		Category = "JoyWay|InteractableObjects|Weapon"
-	)
-	UWeaponPrimaryDataAsset* DefaultData;
-
+	UFUNCTION()
+	void SetDefaultStaticMesh();
+	
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
+	/**
+	* @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
+	*/
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadOnly,
+		Category = "JoyWay|InteractableObjects|Weapon",
+		meta = (ExposeOnSpawn = true)
+	)
+	UWeaponPrimaryDataAsset* DefaultData;
+	
 protected:
 	/**
 	 * @brief Current weapon fire mode
