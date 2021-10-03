@@ -28,7 +28,7 @@ public:
 	UFUNCTION(
 		BlueprintNativeEvent,
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Interactable"
+		Category = "JoyWay|InteractableObjects|Pickupable"
 	)
 	void Pickup(
 		UPARAM(DisplayName = "Component") USceneComponent* InComponent
@@ -40,7 +40,27 @@ public:
 	UFUNCTION(
 		BlueprintNativeEvent,
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Interactable"
+		Category = "JoyWay|InteractableObjects|Pickupable"
 	)
 	void Drop();
+
+	/**
+	* @brief Executes action in picked up object
+	*/
+	UFUNCTION(
+		BlueprintNativeEvent,
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Pickupable"
+	)
+	void RunAction();
+
+	/**
+	* @brief Executes action in picked up object
+	*/
+	UFUNCTION(
+		BlueprintNativeEvent,
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Pickupable"
+	)
+	void StopAction();
 };
