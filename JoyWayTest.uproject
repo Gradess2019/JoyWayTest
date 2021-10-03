@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{017A5F78-4412-F8CD-5560-70AF384CC5B6}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "JoyWayTest",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"CoreUObject",
+				"Engine"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "StandaloneServer",
+			"Enabled": true
+		}
+	],
+	"TargetPlatforms": [
+		"PS4",
+		"WindowsNoEditor"
+	]
+}
