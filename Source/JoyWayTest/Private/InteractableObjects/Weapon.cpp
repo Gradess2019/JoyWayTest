@@ -9,6 +9,7 @@
 #include "JoyWayTest/JoyWayTest.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "Net/UnrealNetwork.h"
 
 
 AWeapon::AWeapon()
@@ -172,3 +173,10 @@ void AWeapon::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 	}
 }
 #endif
+
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWeapon, DefaultData);
+}

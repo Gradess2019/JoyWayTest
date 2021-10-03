@@ -130,12 +130,15 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	/**
 	* @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
 	*/
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadOnly,
+		Replicated,
 		Category = "JoyWay|InteractableObjects|Weapon",
 		meta = (ExposeOnSpawn = true)
 	)
