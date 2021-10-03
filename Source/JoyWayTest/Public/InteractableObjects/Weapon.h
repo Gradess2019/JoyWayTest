@@ -75,6 +75,52 @@ public:
 	void Fire();
 
 	/**
+	 * @brief Execute single fire on a server
+	 */
+	UFUNCTION(
+		Server,
+		WithValidation,
+		Reliable,
+		Category = "JoyWay|InteractableObjects|Weapon|FireMode"
+	)
+	void Fire_Server();
+
+	/**
+	 * @brief Launch a trace from fire location
+	 * @return Hit line-trace result
+	 */
+	UFUNCTION()
+	FHitResult LaunchTrace();
+
+	/**
+	 * @brief Draw a trace using hit data
+	 * @param Hit Used hit to draw trace
+	 * @param Color Trace color
+	 */
+	UFUNCTION(
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Weapon|Debug"
+	)
+	void DrawTrace(
+		const FHitResult Hit,
+		const FColor Color = FColor::Red
+	);
+	
+	/**
+	 * @brief Draw a trace on a client using hit data
+	 * @param Hit Used hit to draw trace
+	 * @param Color Trace color
+	 */
+	UFUNCTION(
+		Client,
+		Unreliable
+	)
+	void DrawTrace_Client(
+		const FHitResult Hit,
+		const FColor Color = FColor::Red
+	);
+
+	/**
 	 * @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
 	 */
 	UPROPERTY(

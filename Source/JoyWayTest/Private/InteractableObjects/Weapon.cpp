@@ -7,6 +7,8 @@
 #include "InteractableObjects/Weapon/FireMode/AutoFireMode.h"
 #include "InteractableObjects/Weapon/FireMode/FireMode.h"
 #include "JoyWayTest/JoyWayTest.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 
 AWeapon::AWeapon()
@@ -15,6 +17,8 @@ AWeapon::AWeapon()
 
 	SetMobility(EComponentMobility::Movable);
 	SetSimulatePhysics(true);
+	bReplicates = true;
+	bStaticMeshReplicateMovement = true;
 
 	CollisionParams = FCollisionQueryParams::DefaultQueryParam;
 	CollisionParams.TraceTag = DebugTraceTag;
@@ -24,6 +28,11 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (HasAuthority())
+	{
+		SetReplicateMovement(bStaticMeshReplicateMovement);
+	}
+	
 	check(DefaultData->DefaultFireModeClass);
 	SetFireModeByClass(DefaultData->DefaultFireModeClass);
 }
@@ -37,7 +46,7 @@ void AWeapon::Pickup_Implementation(USceneComponent* InComponent)
 {
 	check(InComponent);
 	StopAction_Implementation();
-	
+
 	SetSimulatePhysics(false);
 	AttachToComponent(InComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }
@@ -45,7 +54,7 @@ void AWeapon::Pickup_Implementation(USceneComponent* InComponent)
 void AWeapon::Drop_Implementation()
 {
 	StopAction_Implementation();
-	
+
 	GetStaticMeshComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	SetSimulatePhysics(true);
 }
@@ -76,12 +85,45 @@ void AWeapon::SetFireModeByClass(UClass* InFireModeClass)
 
 void AWeapon::Fire_Implementation()
 {
-	GLog->Log("Fire!");
+	const auto Hit = LaunchTrace();
+	DrawTrace(Hit, FColor::Blue);
+	
+	Fire_Server();
+}
+
+void AWeapon::Fire_Server_Implementation()
+{
+	const auto Hit = LaunchTrace();
+	DrawTrace_Client(Hit);
+
+	if (!Hit.IsValidBlockingHit()) { return; }
+
+	const auto DamagedActor = Hit.Actor.Get();
+	const auto BaseDamage = DefaultData->Damage;
+	const auto EventInstigator = UGameplayStatics::GetPlayerController(this, 0);
+	const auto DamageCauser = this;
+	const auto DamageTypeClass = TSubclassOf<UDamageType>(UDamageType::StaticClass());
+	const auto DamageEvent = FDamageEvent(DamageTypeClass);
+	
+	DamagedActor->TakeDamage(
+		BaseDamage,
+		DamageEvent,
+		EventInstigator,
+		DamageCauser
+	);
+}
+
+bool AWeapon::Fire_Server_Validate()
+{
+	return true;
+}
+
+FHitResult AWeapon::LaunchTrace()
+{
 	FHitResult Hit;
 	const auto StartLocation = GetStaticMeshComponent()->GetSocketLocation(DefaultData->FireLocationSocketName);
 	const auto EndLocation = StartLocation + DefaultData->TraceDistance * GetActorForwardVector();
-
-	GetWorld()->DebugDrawTraceTag = DebugTraceTag;
+	
 	GetWorld()->LineTraceSingleByChannel(
 		Hit,
 		StartLocation,
@@ -89,6 +131,25 @@ void AWeapon::Fire_Implementation()
 		DefaultData->TraceChannel,
 		CollisionParams
 	);
+	
+	return Hit;
+}
+
+void AWeapon::DrawTrace(const FHitResult Hit, const FColor Color)
+{
+	DrawDebugLine(
+		GetWorld(),
+		Hit.TraceStart,
+		Hit.IsValidBlockingHit() ? Hit.Location : Hit.TraceEnd,
+		Color,
+		false,
+		2.f
+	);
+}
+
+void AWeapon::DrawTrace_Client_Implementation(const FHitResult Hit, const FColor Color)
+{
+	DrawTrace(Hit, Color);
 }
 
 #if WITH_EDITOR
