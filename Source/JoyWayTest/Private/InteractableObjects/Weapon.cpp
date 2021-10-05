@@ -6,25 +6,23 @@
 #include "InteractableObjects/Weapon/DataAsset/WeaponPrimaryDataAsset.h"
 #include "InteractableObjects/Weapon/FireMode/AutoFireMode.h"
 #include "InteractableObjects/Weapon/FireMode/FireMode.h"
-#include "JoyWayTest/JoyWayTest.h"
+#include "InteractableObjects/Weapon/Components/AmmoComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
-
 
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	AmmoComponent = CreateDefaultSubobject<UAmmoComponent>("AmmoComponent");
+	
 	SetMobility(EComponentMobility::Movable);
 	SetSimulatePhysics(true);
 	GetStaticMeshComponent()->SetGenerateOverlapEvents(true);
 	GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::PhysicsActor_ProfileName);
 	bReplicates = true;
 	bStaticMeshReplicateMovement = true;
-
-	CollisionParams = FCollisionQueryParams::DefaultQueryParam;
-	CollisionParams.TraceTag = DebugTraceTag;
 }
 
 void AWeapon::BeginPlay()
@@ -36,6 +34,7 @@ void AWeapon::BeginPlay()
 		SetReplicateMovement(bStaticMeshReplicateMovement);
 	}
 
+	check(AmmoComponent);
 	check(DefaultData->DefaultFireModeClass);
 	SetFireModeByClass(DefaultData->DefaultFireModeClass);
 	SetDefaultStaticMesh();
@@ -87,8 +86,15 @@ void AWeapon::SetFireModeByClass(UClass* InFireModeClass)
 	SetFireMode(NewFireMode);
 }
 
+void AWeapon::Reload_Implementation()
+{
+	AmmoComponent->Reload_Server();
+}
+
 void AWeapon::Fire_Implementation()
 {
+	if (AmmoComponent->IsMagazineEmpty() || AmmoComponent->IsReloading()) { return; }
+
 	const auto Hit = LaunchTrace();
 	DrawTrace(Hit, FColor::Blue);
 
@@ -99,6 +105,7 @@ void AWeapon::Fire_Server_Implementation()
 {
 	const auto Hit = LaunchTrace();
 	DrawTrace_Client(Hit);
+	OnFire.Broadcast();
 
 	if (!Hit.IsValidBlockingHit()) { return; }
 
@@ -119,7 +126,7 @@ void AWeapon::Fire_Server_Implementation()
 
 bool AWeapon::Fire_Server_Validate()
 {
-	return true;
+	return AmmoComponent->IsValidAmmoCount();
 }
 
 FHitResult AWeapon::LaunchTrace()
@@ -132,8 +139,7 @@ FHitResult AWeapon::LaunchTrace()
 		Hit,
 		StartLocation,
 		EndLocation,
-		DefaultData->TraceChannel,
-		CollisionParams
+		DefaultData->TraceChannel
 	);
 
 	return Hit;
@@ -166,11 +172,16 @@ void AWeapon::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (PropertyChangedEvent.Property &&
-		PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(AWeapon, DefaultData))
+	if (IsDefaultDataChanged(PropertyChangedEvent))
 	{
 		SetDefaultStaticMesh();
 	}
+}
+
+bool AWeapon::IsDefaultDataChanged(const FPropertyChangedEvent& PropertyChangedEvent) const
+{
+	return PropertyChangedEvent.Property &&
+		PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(AWeapon, DefaultData);
 }
 #endif
 

@@ -59,7 +59,16 @@ public:
 		BlueprintReadOnly
 	)
 	float FireRate;
-	
+
+	/**
+	 * @brief How much time weapon needs to reload ammo
+	 */
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadOnly
+	)
+	float ReloadingTime;
+
 	/**
 	 * @brief Amount of damage that we apply on hit actor
 	 */
@@ -94,7 +103,7 @@ public:
 		EditAnywhere,
 		BlueprintReadOnly
 	)
-	int32 Ammo;
+	int32 StoreAmmo;
 
 	/**
 	 * @brief Channel for line trace to detect hit
