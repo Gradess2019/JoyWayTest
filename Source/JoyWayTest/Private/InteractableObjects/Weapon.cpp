@@ -11,6 +11,9 @@
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
 
+//~ Begin log
+DEFINE_LOG_CATEGORY(LogWeapon)
+//~ End log
 
 AWeapon::AWeapon()
 {
@@ -34,6 +37,8 @@ void AWeapon::BeginPlay()
 	if (HasAuthority())
 	{
 		SetReplicateMovement(bStaticMeshReplicateMovement);
+		CurrentMagazineAmmo = DefaultData->MagazineAmmo;
+		CurrentStoreAmmo = DefaultData->StoreAmmo;
 	}
 
 	check(DefaultData->DefaultFireModeClass);
@@ -89,6 +94,8 @@ void AWeapon::SetFireModeByClass(UClass* InFireModeClass)
 
 void AWeapon::Fire_Implementation()
 {
+	if (CurrentMagazineAmmo == 0) { return; }
+
 	const auto Hit = LaunchTrace();
 	DrawTrace(Hit, FColor::Blue);
 
@@ -99,6 +106,13 @@ void AWeapon::Fire_Server_Implementation()
 {
 	const auto Hit = LaunchTrace();
 	DrawTrace_Client(Hit);
+	CurrentMagazineAmmo--;
+
+	UE_LOG(LogWeapon, Log, TEXT("Server: CurrentMagazineAmmo: %d"), CurrentMagazineAmmo);
+	if (CurrentMagazineAmmo == 0)
+	{
+		Reload();
+	}
 
 	if (!Hit.IsValidBlockingHit()) { return; }
 
@@ -119,7 +133,7 @@ void AWeapon::Fire_Server_Implementation()
 
 bool AWeapon::Fire_Server_Validate()
 {
-	return true;
+	return DefaultData->MagazineAmmo >= CurrentMagazineAmmo && CurrentMagazineAmmo > 0;
 }
 
 FHitResult AWeapon::LaunchTrace()
@@ -156,6 +170,34 @@ void AWeapon::DrawTrace_Client_Implementation(const FHitResult Hit, const FColor
 	DrawTrace(Hit, Color);
 }
 
+void AWeapon::Reload()
+{
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerReload,
+		this,
+		&AWeapon::OnReloaded,
+		DefaultData->ReloadingTime
+	);
+}
+
+void AWeapon::Reload_Server_Implementation()
+{
+	Reload();
+}
+
+void AWeapon::OnReloaded()
+{
+	if (CurrentStoreAmmo == 0) { return; }
+
+	const auto RequiredAmmo = DefaultData->MagazineAmmo - CurrentMagazineAmmo;
+	const auto ActualGottenAmmo = CurrentStoreAmmo >= RequiredAmmo ? RequiredAmmo : CurrentStoreAmmo % RequiredAmmo;
+
+	CurrentStoreAmmo -= ActualGottenAmmo;
+	CurrentMagazineAmmo += ActualGottenAmmo;
+
+	UE_LOG(LogWeapon, Log, TEXT("Reloaded: Magazine => %d; Store => %d"), CurrentMagazineAmmo, CurrentStoreAmmo);
+}
+
 void AWeapon::SetDefaultStaticMesh()
 {
 	GetStaticMeshComponent()->SetStaticMesh(DefaultData->Mesh);
@@ -166,11 +208,16 @@ void AWeapon::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (PropertyChangedEvent.Property &&
-		PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(AWeapon, DefaultData))
+	if (IsDefaultDataChanged(PropertyChangedEvent))
 	{
 		SetDefaultStaticMesh();
 	}
+}
+
+bool AWeapon::IsDefaultDataChanged(const FPropertyChangedEvent& PropertyChangedEvent) const
+{
+	return PropertyChangedEvent.Property &&
+		PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(AWeapon, DefaultData);
 }
 #endif
 
@@ -179,4 +226,11 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, DefaultData);
+	DOREPLIFETIME(AWeapon, CurrentMagazineAmmo);
+	DOREPLIFETIME(AWeapon, CurrentStoreAmmo);
+}
+
+void AWeapon::OnRep_CurrentAmmoInMagazine()
+{
+	UE_LOG(LogWeapon, Log, TEXT("Client: CurrentMagazineAmmo = %d"), CurrentMagazineAmmo);
 }

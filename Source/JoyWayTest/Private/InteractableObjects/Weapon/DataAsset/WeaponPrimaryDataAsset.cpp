@@ -16,11 +16,12 @@ UWeaponPrimaryDataAsset::UWeaponPrimaryDataAsset()
 	FireLocationSocketName = TEXT("FireLocation");
 	
 	FireRate = 0.1f;
+	ReloadingTime = 1.f;
 	Damage = 30.f;
 	TraceDistance = 10000.f;
 
 	MagazineAmmo = 30;
-	Ammo = 90;
+	StoreAmmo = 90;
 
 	TraceChannel = ECC_Visibility;
 }

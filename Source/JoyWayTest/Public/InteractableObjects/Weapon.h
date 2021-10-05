@@ -7,6 +7,11 @@
 #include "Engine/StaticMeshActor.h"
 #include "Weapon.generated.h"
 
+//~ Begin log
+DECLARE_LOG_CATEGORY_EXTERN(LogWeapon, Log, All);
+
+//~ End log
+
 //~ Begin forward declarations
 class UWeaponPrimaryDataAsset;
 //~ End forward declarations
@@ -105,7 +110,7 @@ public:
 		const FHitResult Hit,
 		const FColor Color = FColor::Red
 	);
-	
+
 	/**
 	 * @brief Draw a trace on a client using hit data
 	 * @param Hit Used hit to draw trace
@@ -121,17 +126,48 @@ public:
 	);
 
 	/**
+	 * @brief Starts a timer for ammo reloading
+	 */
+	UFUNCTION(
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	void Reload();
+
+	UFUNCTION(
+		Server,
+		Reliable,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	void Reload_Server();
+
+	/**
+	 * @brief Fires when ammo was reloaded
+	 */
+	UFUNCTION(
+		BlueprintCallable,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	void OnReloaded();
+
+	/**
 	 * @brief Sets default static mesh
 	 */
 	UFUNCTION()
 	void SetDefaultStaticMesh();
-	
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	bool IsDefaultDataChanged(const FPropertyChangedEvent& PropertyChangedEvent) const;
 #endif
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+protected:
+	UFUNCTION()
+	void OnRep_CurrentAmmoInMagazine();
+
+public:
 	/**
 	* @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
 	*/
@@ -143,7 +179,7 @@ public:
 		meta = (ExposeOnSpawn = true)
 	)
 	UWeaponPrimaryDataAsset* DefaultData;
-	
+
 protected:
 	/**
 	 * @brief Current weapon fire mode
@@ -153,6 +189,36 @@ protected:
 		Category = "JoyWay|InteractableObjects|Weapon"
 	)
 	UObject* FireMode;
+
+
+	//TODO Future improvement: wrap in a separate component
+	////////////////////////////////////////////////////////////
+	/**
+	 * @brief Current amount of ammo in a mag
+	 */
+	UPROPERTY(
+		BlueprintReadWrite,
+		ReplicatedUsing=OnRep_CurrentAmmoInMagazine,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	int CurrentMagazineAmmo;
+
+	/**
+	 * @brief Current amount of ammo in a store
+	 */
+	UPROPERTY(
+		BlueprintReadWrite,
+		Replicated,
+		Category = "JoyWay|InteractableObjects|Weapon"
+	)
+	int CurrentStoreAmmo;
+
+	/**
+	 * @brief Timer for weapon ammo reloading
+	 */
+	UPROPERTY()
+	FTimerHandle TimerReload;
+	////////////////////////////////////////////////////////////
 
 private:
 	/**
