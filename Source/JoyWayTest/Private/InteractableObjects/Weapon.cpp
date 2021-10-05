@@ -6,19 +6,18 @@
 #include "InteractableObjects/Weapon/DataAsset/WeaponPrimaryDataAsset.h"
 #include "InteractableObjects/Weapon/FireMode/AutoFireMode.h"
 #include "InteractableObjects/Weapon/FireMode/FireMode.h"
+#include "InteractableObjects/Weapon/Components/AmmoComponent.h"
 #include "JoyWayTest/JoyWayTest.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
 
-//~ Begin log
-DEFINE_LOG_CATEGORY(LogWeapon)
-//~ End log
-
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	AmmoComponent = CreateDefaultSubobject<UAmmoComponent>("AmmoComponent");
+	
 	SetMobility(EComponentMobility::Movable);
 	SetSimulatePhysics(true);
 	GetStaticMeshComponent()->SetGenerateOverlapEvents(true);
@@ -37,10 +36,9 @@ void AWeapon::BeginPlay()
 	if (HasAuthority())
 	{
 		SetReplicateMovement(bStaticMeshReplicateMovement);
-		CurrentMagazineAmmo = DefaultData->MagazineAmmo;
-		CurrentStoreAmmo = DefaultData->StoreAmmo;
 	}
 
+	check(AmmoComponent);
 	check(DefaultData->DefaultFireModeClass);
 	SetFireModeByClass(DefaultData->DefaultFireModeClass);
 	SetDefaultStaticMesh();
@@ -92,9 +90,14 @@ void AWeapon::SetFireModeByClass(UClass* InFireModeClass)
 	SetFireMode(NewFireMode);
 }
 
+void AWeapon::Reload_Implementation()
+{
+	AmmoComponent->Reload_Server();
+}
+
 void AWeapon::Fire_Implementation()
 {
-	if (CurrentMagazineAmmo == 0) { return; }
+	if (AmmoComponent->IsMagazineEmpty() || AmmoComponent->IsReloading()) { return; }
 
 	const auto Hit = LaunchTrace();
 	DrawTrace(Hit, FColor::Blue);
@@ -106,13 +109,7 @@ void AWeapon::Fire_Server_Implementation()
 {
 	const auto Hit = LaunchTrace();
 	DrawTrace_Client(Hit);
-	CurrentMagazineAmmo--;
-
-	UE_LOG(LogWeapon, Log, TEXT("Server: CurrentMagazineAmmo: %d"), CurrentMagazineAmmo);
-	if (CurrentMagazineAmmo == 0)
-	{
-		Reload();
-	}
+	OnFire.Broadcast();
 
 	if (!Hit.IsValidBlockingHit()) { return; }
 
@@ -133,7 +130,7 @@ void AWeapon::Fire_Server_Implementation()
 
 bool AWeapon::Fire_Server_Validate()
 {
-	return DefaultData->MagazineAmmo >= CurrentMagazineAmmo && CurrentMagazineAmmo > 0;
+	return AmmoComponent->IsValidAmmoCount();
 }
 
 FHitResult AWeapon::LaunchTrace()
@@ -170,34 +167,6 @@ void AWeapon::DrawTrace_Client_Implementation(const FHitResult Hit, const FColor
 	DrawTrace(Hit, Color);
 }
 
-void AWeapon::Reload()
-{
-	GetWorld()->GetTimerManager().SetTimer(
-		TimerReload,
-		this,
-		&AWeapon::OnReloaded,
-		DefaultData->ReloadingTime
-	);
-}
-
-void AWeapon::Reload_Server_Implementation()
-{
-	Reload();
-}
-
-void AWeapon::OnReloaded()
-{
-	if (CurrentStoreAmmo == 0) { return; }
-
-	const auto RequiredAmmo = DefaultData->MagazineAmmo - CurrentMagazineAmmo;
-	const auto ActualGottenAmmo = CurrentStoreAmmo >= RequiredAmmo ? RequiredAmmo : CurrentStoreAmmo % RequiredAmmo;
-
-	CurrentStoreAmmo -= ActualGottenAmmo;
-	CurrentMagazineAmmo += ActualGottenAmmo;
-
-	UE_LOG(LogWeapon, Log, TEXT("Reloaded: Magazine => %d; Store => %d"), CurrentMagazineAmmo, CurrentStoreAmmo);
-}
-
 void AWeapon::SetDefaultStaticMesh()
 {
 	GetStaticMeshComponent()->SetStaticMesh(DefaultData->Mesh);
@@ -226,11 +195,4 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, DefaultData);
-	DOREPLIFETIME(AWeapon, CurrentMagazineAmmo);
-	DOREPLIFETIME(AWeapon, CurrentStoreAmmo);
-}
-
-void AWeapon::OnRep_CurrentAmmoInMagazine()
-{
-	UE_LOG(LogWeapon, Log, TEXT("Client: CurrentMagazineAmmo = %d"), CurrentMagazineAmmo);
 }

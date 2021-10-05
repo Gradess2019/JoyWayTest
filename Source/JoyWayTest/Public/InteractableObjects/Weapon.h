@@ -7,14 +7,15 @@
 #include "Engine/StaticMeshActor.h"
 #include "Weapon.generated.h"
 
-//~ Begin log
-DECLARE_LOG_CATEGORY_EXTERN(LogWeapon, Log, All);
-
-//~ End log
-
 //~ Begin forward declarations
 class UWeaponPrimaryDataAsset;
+class UAmmoComponent;
 //~ End forward declarations
+
+//~ Begin delegate declarations
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FWeaponFireSignature);
+
+//~ End delegate declarations
 
 /**
  * @brief Represents a weapon in a game
@@ -35,7 +36,7 @@ public:
 	 */
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	void SetSimulatePhysics(bool InState);
 
@@ -52,7 +53,7 @@ public:
 	 */
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	void SetFireMode(
 		UPARAM(DisplayName = "FireMode") UObject* InFireMode
@@ -64,47 +65,57 @@ public:
 	*/
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	void SetFireModeByClass(
 		UPARAM(DisplayName = "FireMode") UClass* InFireModeClass
 	);
 
 	/**
-	* @brief Execute single fire
+	* @brief Executes reload on ammo component
 	*/
 	UFUNCTION(
 		BlueprintNativeEvent,
-		Category = "JoyWay|InteractableObjects|Weapon|FireMode"
+		BlueprintCallable,
+		Category = "JoyWay|Weapon"
+	)
+	void Reload();
+
+	/**
+	* @brief Executes single fire
+	*/
+	UFUNCTION(
+		BlueprintNativeEvent,
+		Category = "JoyWay|Weapon|FireMode"
 	)
 	void Fire();
 
 	/**
-	 * @brief Execute single fire on a server
+	 * @brief Executes single fire on a server
 	 */
 	UFUNCTION(
 		Server,
 		WithValidation,
 		Reliable,
-		Category = "JoyWay|InteractableObjects|Weapon|FireMode"
+		Category = "JoyWay|Weapon|FireMode"
 	)
 	void Fire_Server();
 
 	/**
-	 * @brief Launch a trace from fire location
+	 * @brief Launches a trace from fire location
 	 * @return Hit line-trace result
 	 */
 	UFUNCTION()
 	FHitResult LaunchTrace();
 
 	/**
-	 * @brief Draw a trace using hit data
+	 * @brief Draws a trace using hit data
 	 * @param Hit Used hit to draw trace
 	 * @param Color Trace color
 	 */
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon|Debug"
+		Category = "JoyWay|Weapon|Debug"
 	)
 	void DrawTrace(
 		const FHitResult Hit,
@@ -112,7 +123,7 @@ public:
 	);
 
 	/**
-	 * @brief Draw a trace on a client using hit data
+	 * @brief Draws a trace on a client using hit data
 	 * @param Hit Used hit to draw trace
 	 * @param Color Trace color
 	 */
@@ -124,31 +135,6 @@ public:
 		const FHitResult Hit,
 		const FColor Color = FColor::Red
 	);
-
-	/**
-	 * @brief Starts a timer for ammo reloading
-	 */
-	UFUNCTION(
-		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
-	)
-	void Reload();
-
-	UFUNCTION(
-		Server,
-		Reliable,
-		Category = "JoyWay|InteractableObjects|Weapon"
-	)
-	void Reload_Server();
-
-	/**
-	 * @brief Fires when ammo was reloaded
-	 */
-	UFUNCTION(
-		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
-	)
-	void OnReloaded();
 
 	/**
 	 * @brief Sets default static mesh
@@ -163,11 +149,16 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-protected:
-	UFUNCTION()
-	void OnRep_CurrentAmmoInMagazine();
-
 public:
+	/**
+	 * @brief Weapon fire delegate
+	 */
+	UPROPERTY(
+		BlueprintAssignable,
+		Category = "JoyWay|Weapon"
+	)
+	FWeaponFireSignature OnFire;
+
 	/**
 	* @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
 	*/
@@ -175,7 +166,7 @@ public:
 		EditAnywhere,
 		BlueprintReadOnly,
 		Replicated,
-		Category = "JoyWay|InteractableObjects|Weapon",
+		Category = "JoyWay|Weapon",
 		meta = (ExposeOnSpawn = true)
 	)
 	UWeaponPrimaryDataAsset* DefaultData;
@@ -186,39 +177,18 @@ protected:
 	 */
 	UPROPERTY(
 		BlueprintReadOnly,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	UObject* FireMode;
 
-
-	//TODO Future improvement: wrap in a separate component
-	////////////////////////////////////////////////////////////
 	/**
-	 * @brief Current amount of ammo in a mag
+	 * @brief Current ammo component
 	 */
 	UPROPERTY(
-		BlueprintReadWrite,
-		ReplicatedUsing=OnRep_CurrentAmmoInMagazine,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		BlueprintReadOnly,
+		Category = "JoyWay|Weapon"
 	)
-	int CurrentMagazineAmmo;
-
-	/**
-	 * @brief Current amount of ammo in a store
-	 */
-	UPROPERTY(
-		BlueprintReadWrite,
-		Replicated,
-		Category = "JoyWay|InteractableObjects|Weapon"
-	)
-	int CurrentStoreAmmo;
-
-	/**
-	 * @brief Timer for weapon ammo reloading
-	 */
-	UPROPERTY()
-	FTimerHandle TimerReload;
-	////////////////////////////////////////////////////////////
+	UAmmoComponent* AmmoComponent;
 
 private:
 	/**
