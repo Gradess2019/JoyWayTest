@@ -14,7 +14,6 @@ class UAmmoComponent;
 
 //~ Begin delegate declarations
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FWeaponFireSignature);
-
 //~ End delegate declarations
 
 /**
