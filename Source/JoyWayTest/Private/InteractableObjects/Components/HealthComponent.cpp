@@ -68,6 +68,8 @@ void UHealthComponent::DecreaseHealth_Implementation(const float Amount)
 {
 	Health -= Amount;
 
+	UE_LOG(LogHealthComponent, Log, TEXT("Server: Damage: %f; Health: %f"), Amount, Health);
+	
 	if (Health > 0) { return; }
 
 	OnHealthZero.Broadcast();
@@ -87,5 +89,5 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void UHealthComponent::OnRep_Health_Implementation()
 {
-	UE_LOG(LogHealthComponent, Log, TEXT("%s => Health is: %f"), *GetOwner()->GetName(), Health);
+	UE_LOG(LogHealthComponent, Log, TEXT("Client: %s => Health is: %f"), *GetOwner()->GetName(), Health);
 }
