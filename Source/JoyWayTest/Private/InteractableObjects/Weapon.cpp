@@ -7,7 +7,6 @@
 #include "InteractableObjects/Weapon/FireMode/AutoFireMode.h"
 #include "InteractableObjects/Weapon/FireMode/FireMode.h"
 #include "InteractableObjects/Weapon/Components/AmmoComponent.h"
-#include "JoyWayTest/JoyWayTest.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Net/UnrealNetwork.h"
@@ -24,9 +23,6 @@ AWeapon::AWeapon()
 	GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::PhysicsActor_ProfileName);
 	bReplicates = true;
 	bStaticMeshReplicateMovement = true;
-
-	CollisionParams = FCollisionQueryParams::DefaultQueryParam;
-	CollisionParams.TraceTag = DebugTraceTag;
 }
 
 void AWeapon::BeginPlay()
@@ -143,8 +139,7 @@ FHitResult AWeapon::LaunchTrace()
 		Hit,
 		StartLocation,
 		EndLocation,
-		DefaultData->TraceChannel,
-		CollisionParams
+		DefaultData->TraceChannel
 	);
 
 	return Hit;

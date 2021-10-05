@@ -189,10 +189,4 @@ protected:
 		Category = "JoyWay|Weapon"
 	)
 	UAmmoComponent* AmmoComponent;
-
-private:
-	/**
-	 * @brief Default collision params for single line trace while firing
-	 */
-	FCollisionQueryParams CollisionParams;
 };
