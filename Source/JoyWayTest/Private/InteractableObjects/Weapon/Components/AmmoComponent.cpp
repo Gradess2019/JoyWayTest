@@ -71,7 +71,7 @@ void UAmmoComponent::OnReloaded()
 	if (CurrentStoreAmmo == 0) { return; }
 
 	const auto RequiredAmmo = DefaultData->MagazineAmmo - CurrentMagazineAmmo;
-	const auto ActualGottenAmmo = CurrentStoreAmmo >= RequiredAmmo ? RequiredAmmo : CurrentStoreAmmo % RequiredAmmo;
+	const auto ActualGottenAmmo = CurrentStoreAmmo >= RequiredAmmo ? RequiredAmmo : CurrentStoreAmmo;
 
 	CurrentStoreAmmo -= ActualGottenAmmo;
 	CurrentMagazineAmmo += ActualGottenAmmo;

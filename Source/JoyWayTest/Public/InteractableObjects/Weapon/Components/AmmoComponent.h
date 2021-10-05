@@ -136,7 +136,6 @@ protected:
 	UPROPERTY(
 		EditAnywhere,
 		BlueprintReadOnly,
-		Replicated,
 		Category = "JoyWay|AmmoComponent",
 		meta = (ExposeOnSpawn = true)
 	)
