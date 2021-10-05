@@ -3,7 +3,3 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-//~ Begin project globals
-const FName DebugTraceTag("DebugTrace");
-//~ End project globals

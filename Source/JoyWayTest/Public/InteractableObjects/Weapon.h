@@ -9,7 +9,13 @@
 
 //~ Begin forward declarations
 class UWeaponPrimaryDataAsset;
+class UAmmoComponent;
 //~ End forward declarations
+
+//~ Begin delegate declarations
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FWeaponFireSignature);
+
+//~ End delegate declarations
 
 /**
  * @brief Represents a weapon in a game
@@ -30,7 +36,7 @@ public:
 	 */
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	void SetSimulatePhysics(bool InState);
 
@@ -47,7 +53,7 @@ public:
 	 */
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	void SetFireMode(
 		UPARAM(DisplayName = "FireMode") UObject* InFireMode
@@ -59,55 +65,65 @@ public:
 	*/
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	void SetFireModeByClass(
 		UPARAM(DisplayName = "FireMode") UClass* InFireModeClass
 	);
 
 	/**
-	* @brief Execute single fire
+	* @brief Executes reload on ammo component
 	*/
 	UFUNCTION(
 		BlueprintNativeEvent,
-		Category = "JoyWay|InteractableObjects|Weapon|FireMode"
+		BlueprintCallable,
+		Category = "JoyWay|Weapon"
+	)
+	void Reload();
+
+	/**
+	* @brief Executes single fire
+	*/
+	UFUNCTION(
+		BlueprintNativeEvent,
+		Category = "JoyWay|Weapon|FireMode"
 	)
 	void Fire();
 
 	/**
-	 * @brief Execute single fire on a server
+	 * @brief Executes single fire on a server
 	 */
 	UFUNCTION(
 		Server,
 		WithValidation,
 		Reliable,
-		Category = "JoyWay|InteractableObjects|Weapon|FireMode"
+		Category = "JoyWay|Weapon|FireMode"
 	)
 	void Fire_Server();
 
 	/**
-	 * @brief Launch a trace from fire location
+	 * @brief Launches a trace from fire location
 	 * @return Hit line-trace result
 	 */
 	UFUNCTION()
 	FHitResult LaunchTrace();
 
 	/**
-	 * @brief Draw a trace using hit data
+	 * @brief Draws a trace using hit data
 	 * @param Hit Used hit to draw trace
 	 * @param Color Trace color
 	 */
 	UFUNCTION(
 		BlueprintCallable,
-		Category = "JoyWay|InteractableObjects|Weapon|Debug"
+		Category = "JoyWay|Weapon|Debug"
 	)
 	void DrawTrace(
 		const FHitResult Hit,
 		const FColor Color = FColor::Red
 	);
-	
+
 	/**
-	 * @brief Draw a trace on a client using hit data
+	 * @brief Draws a trace on a client using hit data
 	 * @param Hit Used hit to draw trace
 	 * @param Color Trace color
 	 */
@@ -125,12 +141,23 @@ public:
 	 */
 	UFUNCTION()
 	void SetDefaultStaticMesh();
-	
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	bool IsDefaultDataChanged(const FPropertyChangedEvent& PropertyChangedEvent) const;
 #endif
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+public:
+	/**
+	 * @brief Weapon fire delegate
+	 */
+	UPROPERTY(
+		BlueprintAssignable,
+		Category = "JoyWay|Weapon"
+	)
+	FWeaponFireSignature OnFire;
 
 	/**
 	* @brief Default weapon data such as fire rate, max ammo in the magazine, etc.  
@@ -139,24 +166,27 @@ public:
 		EditAnywhere,
 		BlueprintReadOnly,
 		Replicated,
-		Category = "JoyWay|InteractableObjects|Weapon",
+		Category = "JoyWay|Weapon",
 		meta = (ExposeOnSpawn = true)
 	)
 	UWeaponPrimaryDataAsset* DefaultData;
-	
+
 protected:
 	/**
 	 * @brief Current weapon fire mode
 	 */
 	UPROPERTY(
 		BlueprintReadOnly,
-		Category = "JoyWay|InteractableObjects|Weapon"
+		Category = "JoyWay|Weapon"
 	)
 	UObject* FireMode;
 
-private:
 	/**
-	 * @brief Default collision params for single line trace while firing
+	 * @brief Current ammo component
 	 */
-	FCollisionQueryParams CollisionParams;
+	UPROPERTY(
+		BlueprintReadOnly,
+		Category = "JoyWay|Weapon"
+	)
+	UAmmoComponent* AmmoComponent;
 };
